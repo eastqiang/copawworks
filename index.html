@@ -1,0 +1,549 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>任务清单 | Modern Todo App</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        * {
+            font-family: 'Inter', sans-serif;
+        }
+        
+        body {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding-top: 2rem;
+            padding-bottom: 2rem;
+        }
+        
+        .glass-card {
+            background: rgba(255, 255, 255, 0.9);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+        }
+        
+        .task-item {
+            transition: all 0.3s ease;
+            border-left: 4px solid transparent;
+        }
+        
+        .task-item:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.05);
+        }
+        
+        .task-item.high {
+            border-left-color: #ef4444;
+        }
+        
+        .task-item.medium {
+            border-left-color: #f59e0b;
+        }
+        
+        .task-item.low {
+            border-left-color: #10b981;
+        }
+        
+        .completed {
+            text-decoration: line-through;
+            opacity: 0.6;
+        }
+        
+        .animate-pulse-slow {
+            animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        .fade-in {
+            animation: fadeIn 0.3s ease-out;
+        }
+    </style>
+</head>
+<body>
+    <div class="container mx-auto px-4 max-w-4xl">
+        <!-- 头部 -->
+        <header class="text-center mb-10">
+            <h1 class="text-4xl md:text-5xl font-bold text-white mb-4">
+                <i class="fas fa-tasks mr-3"></i>智能任务清单
+            </h1>
+            <p class="text-white text-opacity-90 text-lg max-w-2xl mx-auto">
+                现代化的任务管理工具，助您高效规划每一天
+            </p>
+        </header>
+
+        <!-- 主应用卡片 -->
+        <main class="glass-card p-6 md:p-8 mb-8">
+            <!-- 添加任务区域 -->
+            <div class="mb-10">
+                <h2 class="text-2xl font-semibold text-gray-800 mb-6">添加新任务</h2>
+                <div class="flex flex-col md:flex-row gap-4">
+                    <div class="flex-grow">
+                        <input type="text" id="taskInput" placeholder="输入任务内容..." 
+                               class="w-full px-5 py-4 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-700 placeholder-gray-400">
+                    </div>
+                    
+                    <div class="flex flex-col md:flex-row gap-4">
+                        <select id="prioritySelect" class="px-4 py-4 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-700 bg-white">
+                            <option value="low">低优先级</option>
+                            <option value="medium" selected>中优先级</option>
+                            <option value="high">高优先级</option>
+                        </select>
+                        
+                        <button id="addTaskBtn" class="px-6 py-4 bg-gradient-to-r from-blue-500 to-purple-600 text-white font-medium rounded-xl hover:from-blue-600 hover:to-purple-700 transition-all duration-300 flex items-center justify-center">
+                            <i class="fas fa-plus mr-2"></i>添加任务
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 任务统计 -->
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+                <div class="bg-gradient-to-r from-blue-50 to-blue-100 rounded-2xl p-5 text-center">
+                    <div class="text-3xl font-bold text-blue-600 mb-2" id="totalTasks">0</div>
+                    <div class="text-gray-600">总任务数</div>
+                </div>
+                <div class="bg-gradient-to-r from-green-50 to-green-100 rounded-2xl p-5 text-center">
+                    <div class="text-3xl font-bold text-green-600 mb-2" id="completedTasks">0</div>
+                    <div class="text-gray-600">已完成</div>
+                </div>
+                <div class="bg-gradient-to-r from-red-50 to-red-100 rounded-2xl p-5 text-center">
+                    <div class="text-3xl font-bold text-red-600 mb-2" id="pendingTasks">0</div>
+                    <div class="text-gray-600">待完成</div>
+                </div>
+            </div>
+
+            <!-- 任务列表 -->
+            <div>
+                <div class="flex justify-between items-center mb-6">
+                    <h2 class="text-2xl font-semibold text-gray-800">任务列表</h2>
+                    <div class="flex space-x-2">
+                        <button id="filterAll" class="px-4 py-2 bg-blue-100 text-blue-700 font-medium rounded-lg hover:bg-blue-200 transition-colors filter-btn active">全部</button>
+                        <button id="filterPending" class="px-4 py-2 bg-gray-100 text-gray-700 font-medium rounded-lg hover:bg-gray-200 transition-colors filter-btn">待完成</button>
+                        <button id="filterCompleted" class="px-4 py-2 bg-gray-100 text-gray-700 font-medium rounded-lg hover:bg-gray-200 transition-colors filter-btn">已完成</button>
+                    </div>
+                </div>
+
+                <div id="taskList" class="space-y-4">
+                    <!-- 任务会动态加载到这里 -->
+                    <div id="emptyState" class="text-center py-12">
+                        <div class="inline-flex items-center justify-center w-16 h-16 rounded-full bg-gradient-to-r from-blue-100 to-purple-100 mb-4">
+                            <i class="fas fa-check text-blue-500 text-2xl"></i>
+                        </div>
+                        <h3 class="text-xl font-medium text-gray-700 mb-2">暂无任务</h3>
+                        <p class="text-gray-500 max-w-md mx-auto">添加您的第一个任务，开始规划您的一天吧！</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 操作按钮 -->
+            <div class="flex flex-col sm:flex-row justify-between mt-10 pt-8 border-t border-gray-200 space-y-4 sm:space-y-0">
+                <div class="flex space-x-3">
+                    <button id="markAllCompleteBtn" class="px-5 py-3 bg-gradient-to-r from-green-500 to-emerald-600 text-white font-medium rounded-xl hover:from-green-600 hover:to-emerald-700 transition-all duration-300 flex items-center">
+                        <i class="fas fa-check-double mr-2"></i>全部标记完成
+                    </button>
+                    <button id="clearCompletedBtn" class="px-5 py-3 bg-gradient-to-r from-red-500 to-pink-600 text-white font-medium rounded-xl hover:from-red-600 hover:to-pink-700 transition-all duration-300 flex items-center">
+                        <i class="fas fa-trash mr-2"></i>清除已完成
+                    </button>
+                </div>
+                
+                <button id="exportBtn" class="px-5 py-3 bg-gradient-to-r from-purple-500 to-indigo-600 text-white font-medium rounded-xl hover:from-purple-600 hover:to-indigo-700 transition-all duration-300 flex items-center">
+                    <i class="fas fa-file-export mr-2"></i>导出任务
+                </button>
+            </div>
+        </main>
+
+        <!-- 页脚 -->
+        <footer class="text-center text-white text-opacity-70 mt-6">
+            <p>© 2024 智能任务清单 | 使用 Tailwind CSS 构建</p>
+            <p class="text-sm mt-2">任务数据保存在本地浏览器存储中</p>
+        </footer>
+    </div>
+
+    <!-- 脚本 -->
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // 从localStorage加载任务
+            let tasks = JSON.parse(localStorage.getItem('tasks')) || [];
+            
+            // DOM元素
+            const taskInput = document.getElementById('taskInput');
+            const prioritySelect = document.getElementById('prioritySelect');
+            const addTaskBtn = document.getElementById('addTaskBtn');
+            const taskList = document.getElementById('taskList');
+            const emptyState = document.getElementById('emptyState');
+            const filterAll = document.getElementById('filterAll');
+            const filterPending = document.getElementById('filterPending');
+            const filterCompleted = document.getElementById('filterCompleted');
+            const markAllCompleteBtn = document.getElementById('markAllCompleteBtn');
+            const clearCompletedBtn = document.getElementById('clearCompletedBtn');
+            const exportBtn = document.getElementById('exportBtn');
+            const totalTasks = document.getElementById('totalTasks');
+            const completedTasks = document.getElementById('completedTasks');
+            const pendingTasks = document.getElementById('pendingTasks');
+            
+            let currentFilter = 'all';
+            
+            // 更新统计信息
+            function updateStats() {
+                const total = tasks.length;
+                const completed = tasks.filter(task => task.completed).length;
+                const pending = total - completed;
+                
+                totalTasks.textContent = total;
+                completedTasks.textContent = completed;
+                pendingTasks.textContent = pending;
+            }
+            
+            // 生成任务ID
+            function generateId() {
+                return Date.now().toString(36) + Math.random().toString(36).substr(2);
+            }
+            
+            // 获取优先级颜色
+            function getPriorityColor(priority) {
+                const colors = {
+                    'high': 'text-red-500 bg-red-50 border-red-200',
+                    'medium': 'text-yellow-500 bg-yellow-50 border-yellow-200',
+                    'low': 'text-green-500 bg-green-50 border-green-200'
+                };
+                return colors[priority] || colors.medium;
+            }
+            
+            // 获取优先级文本
+            function getPriorityText(priority) {
+                const texts = {
+                    'high': '高优先级',
+                    'medium': '中优先级',
+                    'low': '低优先级'
+                };
+                return texts[priority] || texts.medium;
+            }
+            
+            // 渲染任务列表
+            function renderTasks() {
+                // 清空任务列表
+                taskList.innerHTML = '';
+                
+                // 筛选任务
+                let filteredTasks = tasks;
+                if (currentFilter === 'pending') {
+                    filteredTasks = tasks.filter(task => !task.completed);
+                } else if (currentFilter === 'completed') {
+                    filteredTasks = tasks.filter(task => task.completed);
+                }
+                
+                // 如果没有任务且是全部或筛选后为空，显示空状态
+                if (filteredTasks.length === 0) {
+                    taskList.appendChild(emptyState);
+                    emptyState.style.display = 'block';
+                } else {
+                    emptyState.style.display = 'none';
+                }
+                
+                // 添加任务
+                filteredTasks.forEach(task => {
+                    const taskElement = createTaskElement(task);
+                    taskList.appendChild(taskElement);
+                });
+                
+                // 更新统计信息
+                updateStats();
+            }
+            
+            // 创建任务元素
+            function createTaskElement(task) {
+                const taskDiv = document.createElement('div');
+                taskDiv.className = `task-item fade-in glass-card p-5 rounded-xl ${task.priority}`;
+                
+                const priorityClass = getPriorityColor(task.priority);
+                const priorityText = getPriorityText(task.priority);
+                
+                taskDiv.innerHTML = `
+                    <div class="flex items-start">
+                        <div class="flex items-center h-5 mr-4">
+                            <input type="checkbox" ${task.completed ? 'checked' : ''} 
+                                   class="h-5 w-5 rounded border-gray-300 text-blue-600 focus:ring-blue-500" 
+                                   data-id="${task.id}">
+                        </div>
+                        
+                        <div class="flex-grow">
+                            <div class="flex flex-col sm:flex-row sm:items-center justify-between mb-3">
+                                <h3 class="text-lg font-medium ${task.completed ? 'completed text-gray-500' : 'text-gray-800'}">
+                                    ${escapeHtml(task.text)}
+                                </h3>
+                                <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium border ${priorityClass} mt-2 sm:mt-0">
+                                    <i class="fas fa-flag mr-1"></i> ${priorityText}
+                                </span>
+                            </div>
+                            
+                            <div class="flex flex-col sm:flex-row sm:items-center justify-between">
+                                <p class="text-gray-500 text-sm mb-2 sm:mb-0">
+                                    <i class="far fa-clock mr-1"></i> 创建时间: ${formatDate(task.createdAt)}
+                                </p>
+                                <div class="flex space-x-2">
+                                    <button class="edit-btn px-3 py-1.5 bg-gray-100 text-gray-700 text-sm font-medium rounded-lg hover:bg-gray-200 transition-colors" data-id="${task.id}">
+                                        <i class="fas fa-edit mr-1"></i> 编辑
+                                    </button>
+                                    <button class="delete-btn px-3 py-1.5 bg-red-50 text-red-700 text-sm font-medium rounded-lg hover:bg-red-100 transition-colors" data-id="${task.id}">
+                                        <i class="fas fa-trash mr-1"></i> 删除
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+                
+                return taskDiv;
+            }
+            
+            // 添加任务
+            function addTask() {
+                const text = taskInput.value.trim();
+                const priority = prioritySelect.value;
+                
+                if (text === '') {
+                    alert('请输入任务内容');
+                    taskInput.focus();
+                    return;
+                }
+                
+                const newTask = {
+                    id: generateId(),
+                    text: text,
+                    priority: priority,
+                    completed: false,
+                    createdAt: new Date().toISOString()
+                };
+                
+                tasks.unshift(newTask);
+                saveTasks();
+                renderTasks();
+                
+                // 清空输入框
+                taskInput.value = '';
+                taskInput.focus();
+                
+                // 显示成功动画
+                addTaskBtn.innerHTML = '<i class="fas fa-check mr-2"></i> 添加成功!';
+                addTaskBtn.classList.add('from-green-500', 'to-green-600');
+                
+                setTimeout(() => {
+                    addTaskBtn.innerHTML = '<i class="fas fa-plus mr-2"></i> 添加任务';
+                    addTaskBtn.classList.remove('from-green-500', 'to-green-600');
+                }, 1500);
+            }
+            
+            // 切换任务完成状态
+            function toggleTask(id) {
+                const taskIndex = tasks.findIndex(task => task.id === id);
+                if (taskIndex !== -1) {
+                    tasks[taskIndex].completed = !tasks[taskIndex].completed;
+                    saveTasks();
+                    renderTasks();
+                }
+            }
+            
+            // 删除任务
+            function deleteTask(id) {
+                if (confirm('确定要删除这个任务吗？')) {
+                    tasks = tasks.filter(task => task.id !== id);
+                    saveTasks();
+                    renderTasks();
+                }
+            }
+            
+            // 编辑任务
+            function editTask(id) {
+                const taskIndex = tasks.findIndex(task => task.id === id);
+                if (taskIndex !== -1) {
+                    const newText = prompt('编辑任务内容:', tasks[taskIndex].text);
+                    if (newText !== null && newText.trim() !== '') {
+                        tasks[taskIndex].text = newText.trim();
+                        saveTasks();
+                        renderTasks();
+                    }
+                }
+            }
+            
+            // 保存任务到localStorage
+            function saveTasks() {
+                localStorage.setItem('tasks', JSON.stringify(tasks));
+            }
+            
+            // 标记所有任务完成
+            function markAllComplete() {
+                tasks.forEach(task => {
+                    task.completed = true;
+                });
+                saveTasks();
+                renderTasks();
+            }
+            
+            // 清除已完成任务
+            function clearCompleted() {
+                if (confirm('确定要清除所有已完成的任务吗？')) {
+                    tasks = tasks.filter(task => !task.completed);
+                    saveTasks();
+                    renderTasks();
+                }
+            }
+            
+            // 导出任务
+            function exportTasks() {
+                const dataStr = JSON.stringify(tasks, null, 2);
+                const dataBlob = new Blob([dataStr], {type: 'application/json'});
+                const url = URL.createObjectURL(dataBlob);
+                
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `tasks-${new Date().toISOString().split('T')[0]}.json`;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                URL.revokeObjectURL(url);
+                
+                // 显示导出成功提示
+                exportBtn.innerHTML = '<i class="fas fa-check mr-2"></i> 导出成功!';
+                exportBtn.classList.add('from-green-500', 'to-green-600');
+                
+                setTimeout(() => {
+                    exportBtn.innerHTML = '<i class="fas fa-file-export mr-2"></i> 导出任务';
+                    exportBtn.classList.remove('from-green-500', 'to-green-600');
+                }, 1500);
+            }
+            
+            // 辅助函数：HTML转义
+            function escapeHtml(text) {
+                const div = document.createElement('div');
+                div.textContent = text;
+                return div.innerHTML;
+            }
+            
+            // 辅助函数：格式化日期
+            function formatDate(isoString) {
+                const date = new Date(isoString);
+                return date.toLocaleDateString('zh-CN') + ' ' + date.toLocaleTimeString('zh-CN', { 
+                    hour: '2-digit', 
+                    minute: '2-digit' 
+                });
+            }
+            
+            // 事件监听器
+            addTaskBtn.addEventListener('click', addTask);
+            
+            taskInput.addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') {
+                    addTask();
+                }
+            });
+            
+            markAllCompleteBtn.addEventListener('click', markAllComplete);
+            clearCompletedBtn.addEventListener('click', clearCompleted);
+            exportBtn.addEventListener('click', exportTasks);
+            
+            // 筛选按钮事件
+            filterAll.addEventListener('click', function() {
+                setActiveFilter('all');
+                currentFilter = 'all';
+                renderTasks();
+            });
+            
+            filterPending.addEventListener('click', function() {
+                setActiveFilter('pending');
+                currentFilter = 'pending';
+                renderTasks();
+            });
+            
+            filterCompleted.addEventListener('click', function() {
+                setActiveFilter('completed');
+                currentFilter = 'completed';
+                renderTasks();
+            });
+            
+            // 设置活动筛选按钮
+            function setActiveFilter(activeFilter) {
+                document.querySelectorAll('.filter-btn').forEach(btn => {
+                    btn.classList.remove('active', 'bg-blue-100', 'text-blue-700');
+                    btn.classList.add('bg-gray-100', 'text-gray-700');
+                });
+                
+                const activeBtn = document.getElementById(`filter${activeFilter.charAt(0).toUpperCase() + activeFilter.slice(1)}`);
+                if (activeBtn) {
+                    activeBtn.classList.remove('bg-gray-100', 'text-gray-700');
+                    activeBtn.classList.add('bg-blue-100', 'text-blue-700', 'active');
+                }
+            }
+            
+            // 委托事件监听器
+            taskList.addEventListener('click', function(e) {
+                // 复选框点击
+                if (e.target.type === 'checkbox') {
+                    const taskId = e.target.getAttribute('data-id');
+                    toggleTask(taskId);
+                }
+                
+                // 删除按钮点击
+                if (e.target.classList.contains('delete-btn') || e.target.closest('.delete-btn')) {
+                    const btn = e.target.classList.contains('delete-btn') ? e.target : e.target.closest('.delete-btn');
+                    const taskId = btn.getAttribute('data-id');
+                    deleteTask(taskId);
+                }
+                
+                // 编辑按钮点击
+                if (e.target.classList.contains('edit-btn') || e.target.closest('.edit-btn')) {
+                    const btn = e.target.classList.contains('edit-btn') ? e.target : e.target.closest('.edit-btn');
+                    const taskId = btn.getAttribute('data-id');
+                    editTask(taskId);
+                }
+            });
+            
+            // 初始化
+            renderTasks();
+            setActiveFilter('all');
+            
+            // 添加示例任务（如果没有任何任务）
+            if (tasks.length === 0) {
+                setTimeout(() => {
+                    if (tasks.length === 0 && confirm('是否需要添加一些示例任务来体验功能？')) {
+                        const exampleTasks = [
+                            { text: '完成项目文档编写', priority: 'high' },
+                            { text: '购买日常生活用品', priority: 'medium' },
+                            { text: '阅读技术文章30分钟', priority: 'low' },
+                            { text: '回复工作邮件', priority: 'high' },
+                            { text: '计划周末活动', priority: 'low' }
+                        ];
+                        
+                        exampleTasks.forEach(task => {
+                            const newTask = {
+                                id: generateId(),
+                                text: task.text,
+                                priority: task.priority,
+                                completed: false,
+                                createdAt: new Date().toISOString()
+                            };
+                            tasks.push(newTask);
+                        });
+                        
+                        saveTasks();
+                        renderTasks();
+                    }
+                }, 1000);
+            }
+        });
+    </script>
+</body>
+</html>
