@@ -102,6 +102,9 @@
             border-radius: 0.75rem;
             font-size: 1rem;
             transition: all 0.2s;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
         }
         
         input[type="text"]:focus, select:focus {
@@ -119,6 +122,7 @@
             display: inline-flex;
             align-items: center;
             justify-content: center;
+            white-space: nowrap;
         }
         
         .flex {
@@ -346,6 +350,20 @@
         .focus\:border-transparent:focus {
             border-color: transparent;
         }
+        
+        .whitespace-nowrap {
+            white-space: nowrap;
+        }
+        
+        .w-full {
+            width: 100%;
+        }
+        
+        @media (min-width: 768px) {
+            .md\:w-auto {
+                width: auto;
+            }
+        }
     </style>
     
     <!-- 非关键样式异步加载 -->
@@ -403,13 +421,13 @@
                     </div>
                     
                     <div class="flex flex-col md:flex-row gap-4">
-                        <select id="prioritySelect" class="px-4 py-4 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-700 bg-white">
+                        <select id="prioritySelect" class="w-full md:w-auto px-4 py-4 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-700 bg-white whitespace-nowrap">
                             <option value="low">低优先级</option>
                             <option value="medium" selected>中优先级</option>
                             <option value="high">高优先级</option>
                         </select>
                         
-                        <button id="addTaskBtn" class="px-6 py-4 bg-gradient-to-r from-blue-500 to-purple-600 text-white font-medium rounded-xl hover:from-blue-600 hover:to-purple-700 transition-all duration-300 flex items-center justify-center">
+                        <button id="addTaskBtn" class="w-full md:w-auto px-6 py-4 bg-gradient-to-r from-blue-500 to-purple-600 text-white font-medium rounded-xl hover:from-blue-600 hover:to-purple-700 transition-all duration-300 flex items-center justify-center whitespace-nowrap">
                             <i class="fas fa-plus mr-2"></i>添加任务
                         </button>
                     </div>
